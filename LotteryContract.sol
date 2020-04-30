@@ -2,7 +2,7 @@ pragma solidity ^0.5.0;
 
 import './SafeMath.sol';
 
-contract Lottery is SafeMath {
+contract Lottery {
     
     using SafeMath for uint256;
     
@@ -35,13 +35,13 @@ contract Lottery is SafeMath {
         require(msg.value == 0.1 ether, 'Send 0.1 Eth to join');
         require(lotteryState == LotteryState.Open, 'Lottery is closed');
         winners[_chosenNumber].push(msg.sender);  
-        participants++;
+        participants = participants.add(1);
         emit MemberJoined(msg.sender, _chosenNumber);
     }
     
-    function randomNumber(uint _limit) external returns(uint256) {
+    function randomNumber(uint _limit) public returns(uint256) {
         uint random = uint256(keccak256(abi.encodePacked(now, msg.sender, randNonce))) % _limit;
-        randNonce++;
+        randNonce = randNonce.add(1);
         return random;
     }
     
@@ -53,7 +53,7 @@ contract Lottery is SafeMath {
        // emit WinnnersSelected(msg.sender, _chosenNumber);
     }
 
-    function isWinner() external view returns(bool) {
+    function isWinner() public view returns(bool) {
         for(uint i = 0; i < winnersList.length; i++) {
             if (winnersList[i] == msg.sender) {
                 return true;
