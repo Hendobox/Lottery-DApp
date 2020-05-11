@@ -5,10 +5,10 @@ import './SafeMath.sol';        //imports SafeMath
 contract Lottery {
     using SafeMath for uint256;     //initiates SafeMath
     address owner;      //owner's address
-    uint256 participants = 0;       //number of participants
+    uint256 public participants = 0;       //number of participants
     uint256 randNonce = 0;      //pre-defined variable to influence the randomization of the contract
-    address[] winnersList;      //array of winners addresses
-    uint prize;     //lottery prize
+    address[] public winnersList;      //array of winners addresses
+    uint256 public prize;     //lottery prize
     
     //defines the state of the lottery
     enum LotteryState { Open, Closed }       
@@ -40,7 +40,7 @@ contract Lottery {
     //function to enable members participate in the lottery
     function participate(uint256 _chosenNumber) payable external {
         //ensures that the chosen number falls within 1-1000
-        require(_chosenNumber > 0 && _chosenNumber <= 1000, 'Must be a number between 1-1000');
+        require(_chosenNumber > 0 && _chosenNumber <= 10, 'Must be a number between 1-1000');
         //ensures that participant sends exactly 0.1 ether to join
         require(msg.value == 0.1 ether, 'Send 0.1 Eth to join');
         //ensures that the state of the lottery is open before members can join
@@ -53,10 +53,12 @@ contract Lottery {
         emit MemberJoined(msg.sender, _chosenNumber);
     }
     
-    /*This function first hashes the curret time, sender's address, and
-    radomNonce as defined in the state variable. Next, it converts the hash 
-    an integer and divides it by _limit to get an integer between 1-1000.
-    The randomNonce is increased by 1 for the next transaction*/
+    /*
+    * This function first hashes the curret time, sender's address, and
+    * radNonce as defined in the state variable. Next, it converts the hash 
+    * an integer and divides it by _limit to get an integer between 1-1000.
+    * The randNonce is increased by 1 for the next transaction.
+    */
     function _randomNumber(uint _limit) internal returns(uint256) {
         uint random = uint256(keccak256(abi.encodePacked(now, msg.sender, randNonce))) % _limit;
         randNonce = randNonce.add(1);
@@ -68,7 +70,7 @@ contract Lottery {
         //closes the state of the lottery
         lotteryState = LotteryState.Closed;
         //selects a random number within 1000 and adds 1
-        uint256 selected = _randomNumber(1000).add(1);
+        uint256 selected = _randomNumber(10).add(1);
         //binds the winnersList array with the winners mapping
         winnersList = winners[selected];
         //divides the ether balance in the smart contract with the number of winners
@@ -95,7 +97,7 @@ contract Lottery {
         //ensures that caller is among the winners
         require(isWinner(), "You must be a winner");
         //ensures that winner hasn't already made withdrawal
-        require(rewarded[msg.sender] != true, "You have got your reward");
+        require(rewarded[msg.sender] != true, "You have taken your reward");
         //records that the user has made withdrawal
         rewarded[msg.sender] = true;
         //transfers prize to the user
