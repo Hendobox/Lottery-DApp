@@ -3,11 +3,11 @@ pragma solidity ^0.5.0;
 import './SafeMath.sol';        //imports SafeMath
 
 contract Lottery {
-    using SafeMath for uint256;     //initiates SafeMath
+    using SafeMath for uint256;         //initiates SafeMath
     address owner;      //owner's address
     uint256 public participantNum = 0;       //number of participants
     uint256 randNonce = 0;      //pre-defined variable to influence the randomization of the contract
-    address[] public winnersList;      //array of winners addresses
+    address[] public winners;      //array of winners addresses
     uint256 public prize;     //lottery prize
     
     //struct for Participants
@@ -17,11 +17,11 @@ contract Lottery {
     }
 
     //mapping showing if winner has been rewarded
-    mapping (address => bool) rewarded;     
+    mapping (address => bool) public rewarded;     
     //mapping of selected numbers to the array of addresses that picked the number
-    mapping (uint256 => address[]) winners;
+    mapping (uint256 => address[]) public logs;
     //mapping of addresses to Participant struct
-    mapping (address => Participant) participants;
+    mapping (address => Participant) public participants;
     
     //defines the state of the lottery
     enum LotteryState { Open, Closed }       
@@ -33,6 +33,8 @@ contract Lottery {
     event MemberJoined(address memberAddress, uint256 indexed chosenNumber);  
     //event displayed when a member is blacklisted
     event Blacklisted(address addr, string name);
+    //event to show the winning number
+    event WinnnerSelected(uint selected);
     
     //modifier to give rights to only contract owner
     modifier onlyOwner {
@@ -91,13 +93,13 @@ contract Lottery {
         //ensures that the sender is actually the whitelisted address owner
         require(msg.sender == _addr, 'Must own whitelisted address');
         //ensures that the chosen number falls within 1-1000
-        require(_chosenNumber > 0 && _chosenNumber <= 10, 'Must be a number between 1-1000');
+        require(_chosenNumber > 0 && _chosenNumber <= 1000, 'Must be a number between 1-1000');
         //ensures that participant sends exactly 0.1 ether to join
         require(msg.value == 0.1 ether, 'Send 0.1 Eth to join');
         //ensures that the state of the lottery is open before members can join
         require(lotteryState == LotteryState.Open, 'Lottery is closed');
-        //adds the address of members to array of the winners mapping in accordance to selected number
-        winners[_chosenNumber].push(msg.sender);  
+        //adds the address of members to array of the logs mapping in accordance to selected number
+        logs[_chosenNumber].push(msg.sender);  
         //updates the number of participants
         participantNum = participantNum.add(1);
         //emits an event
@@ -121,21 +123,21 @@ contract Lottery {
         //closes the state of the lottery
         lotteryState = LotteryState.Closed;
         //selects a random number within 1000 and adds 1
-        uint256 selected = _randomNumber(10).add(1);
+        uint256 selected = _randomNumber(1000).add(1);
         //binds the winnersList array with the winners mapping
-        winnersList = winners[selected];
+        winners = logs[selected];
         //divides the ether balance in the smart contract with the number of winners
-        prize = address(this).balance / winnersList.length;
+        prize = address(this).balance / winners.length;
         //emits event
-        //emit WinnnersSelected(msg.sender, _chosenNumber);
+        emit WinnnerSelected(selected);
     }
 
     //function to check if caller is among the winners
     function isWinner() public view returns(bool) {
         //loops through the array to ensure that winners don't exceed the number
-        for(uint i = 0; i < winnersList.length; i++) {
+        for(uint i = 0; i < winners.length; i++) {
         //if and else statement to verify winners
-            if (winnersList[i] == msg.sender) {
+            if (winners[i] == msg.sender) {
                 return true;
             } else {
                 return false;
